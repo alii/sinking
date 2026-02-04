@@ -1,16 +1,18 @@
 {
-	"name": "@sww/root",
+	"name": "@sinking/root",
 	"private": true,
 	"workspaces": [
 		"packages/*",
 		"example"
 	],
 	"scripts": {
-		"typecheck": "tsc --noEmit"
+		"typecheck": "bunx tsc --noEmit -p packages/worker && bunx tsc --noEmit -p packages/core && bunx tsc --noEmit -p packages/react && bunx tsc --noEmit -p packages/sinking",
+		"build": "bun run --cwd packages/sinking build",
+		"test": "bun test"
 	},
 	"devDependencies": {
-		"@sww/core": "workspace:*",
-		"@sww/worker": "workspace:*",
+		"@sinking/core": "workspace:*",
+		"@sinking/worker": "workspace:*",
 		"@types/bun": "latest",
 		"typescript": "^5.9.3"
 	}

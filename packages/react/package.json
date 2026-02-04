@@ -1,5 +1,5 @@
 {
-	"name": "@sww/react",
+	"name": "@sinking/react",
 	"version": "0.0.1",
 	"exports": {
 		"./package.json": "./package.json",
@@ -9,7 +9,7 @@
 		"react": "^19.2.10"
 	},
 	"dependencies": {
-		"@sww/core": "workspace:*"
+		"@sinking/core": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/react": "^19.2.10"

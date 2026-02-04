@@ -1,4 +1,4 @@
-import type { ClientMessage, WorkerMessage } from '@sww/worker/types';
+import type { ClientMessage, WorkerMessage } from '@sinking/worker/types';
 import { expect, test } from 'bun:test';
 
 test('message types are defined', () => {

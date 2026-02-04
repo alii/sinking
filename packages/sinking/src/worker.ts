@@ -1,1 +1,1 @@
-import '@sww/worker';
+import '@sinking/worker';

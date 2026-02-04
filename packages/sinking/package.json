@@ -45,9 +45,9 @@
 		"react": ">=19"
 	},
 	"devDependencies": {
-		"@sww/core": "workspace:*",
-		"@sww/react": "workspace:*",
-		"@sww/worker": "workspace:*",
+		"@sinking/core": "workspace:*",
+		"@sinking/react": "workspace:*",
+		"@sinking/worker": "workspace:*",
 		"bunup": "^0.16.22"
 	}
 }

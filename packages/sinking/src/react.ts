@@ -1,1 +1,1 @@
-export * from '@sww/react';
+export * from '@sinking/react';

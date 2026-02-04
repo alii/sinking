@@ -1,1 +1,1 @@
-export * from '@sww/core';
+export * from '@sinking/core';

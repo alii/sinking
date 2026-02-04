@@ -1,4 +1,4 @@
-import type { SWWClient } from '@sww/core';
+import type { SWWClient } from '@sinking/core';
 import { useEffect, useEffectEvent, useState } from 'react';
 
 export function useLiveQuery<T>(

@@ -5,8 +5,8 @@
     "": {
       "name": "sww",
       "devDependencies": {
-        "@sww/core": "workspace:*",
-        "@sww/worker": "workspace:*",
+        "@sinking/core": "workspace:*",
+        "@sinking/worker": "workspace:*",
         "@types/bun": "latest",
         "typescript": "^5.9.3",
       },
@@ -19,14 +19,14 @@
       },
     },
     "packages/core": {
-      "name": "@sww/core",
+      "name": "@sinking/core",
       "version": "0.0.1",
     },
     "packages/react": {
-      "name": "@sww/react",
+      "name": "@sinking/react",
       "version": "0.0.1",
       "dependencies": {
-        "@sww/core": "workspace:*",
+        "@sinking/core": "workspace:*",
       },
       "devDependencies": {
         "@types/react": "^19.2.10",
@@ -39,9 +39,9 @@
       "name": "sinking",
       "version": "0.0.1",
       "devDependencies": {
-        "@sww/core": "workspace:*",
-        "@sww/react": "workspace:*",
-        "@sww/worker": "workspace:*",
+        "@sinking/core": "workspace:*",
+        "@sinking/react": "workspace:*",
+        "@sinking/worker": "workspace:*",
         "bunup": "^0.16.22",
       },
       "peerDependencies": {
@@ -49,7 +49,7 @@
       },
     },
     "packages/worker": {
-      "name": "@sww/worker",
+      "name": "@sinking/worker",
       "version": "0.0.1",
     },
   },
@@ -174,11 +174,11 @@
 
     "@oxc-transform/binding-win32-x64-msvc": ["@oxc-transform/binding-win32-x64-msvc@0.93.0", "", { "os": "win32", "cpu": "x64" }, "sha512-6QN3DEaEw3eWioWEFRgNsTvYq8czYSnpkjB2za+/WdLN0g5FzOl2ZEfNiPrBWIPnSmjUmDWtWVWcSjwY7fX5/Q=="],
 
-    "@sww/core": ["@sww/core@workspace:packages/core"],
+    "@sinking/core": ["@sinking/core@workspace:packages/core"],
 
-    "@sww/react": ["@sww/react@workspace:packages/react"],
+    "@sinking/react": ["@sinking/react@workspace:packages/react"],
 
-    "@sww/worker": ["@sww/worker@workspace:packages/worker"],
+    "@sinking/worker": ["@sinking/worker@workspace:packages/worker"],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.10.1", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg=="],
 
