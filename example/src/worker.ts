@@ -1,0 +1,1 @@
+import '@sww/worker/start';

@@ -2,7 +2,8 @@
 	"name": "sww",
 	"private": true,
 	"workspaces": [
-		"packages/*"
+		"packages/*",
+		"example"
 	],
 	"scripts": {
 		"typecheck": "tsc --noEmit"

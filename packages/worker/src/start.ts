@@ -1,31 +1,38 @@
 import { openDB, request } from './idb.ts';
 import { broadcast, reply, replyError } from './messages.ts';
-import type { ClientMessage } from './types.ts';
+import type { DatabaseSchema } from './schema.ts';
+import { applySchema } from './schema.ts';
+import type { ClientMessage, WorkerMessage } from './types.ts';
 
 declare const self: SharedWorkerGlobalScope;
 
-const DB_NAME = 'sww';
-const DB_VERSION = 1;
-
 const ports = new Set<MessagePort>();
 let db: IDBDatabase | null = null;
+let schema: DatabaseSchema | null = null;
 
-async function getDB(): Promise<IDBDatabase> {
-	if (db) return db;
-	db = await openDB(DB_NAME, DB_VERSION, database => {
-		if (!database.objectStoreNames.contains('data')) {
-			database.createObjectStore('data');
-		}
+async function init(s: DatabaseSchema): Promise<void> {
+	schema = s;
+	db = await openDB(schema.name, schema.version, (database, tx) => {
+		applySchema(database, tx, schema!);
 	});
-	return db;
 }
 
 async function handleMessage(message: ClientMessage, port: MessagePort): Promise<void> {
+	if (message.type === 'init') {
+		await init(message.schema);
+		port.postMessage({ type: 'ready' } satisfies WorkerMessage);
+		return;
+	}
+
+	if (!db) {
+		replyError(port, message.id, new Error('Worker not initialized'));
+		return;
+	}
+
 	try {
-		const database = await getDB();
 		const readonly =
 			message.type === 'get' || message.type === 'getAll' || message.type === 'subscribe';
-		const tx = database.transaction(message.store, readonly ? 'readonly' : 'readwrite');
+		const tx = db.transaction(message.store, readonly ? 'readonly' : 'readwrite');
 		const store = tx.objectStore(message.store);
 
 		switch (message.type) {

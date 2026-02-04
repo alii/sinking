@@ -8,12 +8,12 @@ export function request<T>(req: IDBRequest<T>): Promise<T> {
 export function openDB(
 	name: string,
 	version: number,
-	onUpgrade: (db: IDBDatabase, event: IDBVersionChangeEvent) => void,
+	onUpgrade: (db: IDBDatabase, tx: IDBTransaction) => void,
 ): Promise<IDBDatabase> {
 	return new Promise((resolve, reject) => {
 		const req = indexedDB.open(name, version);
 		req.onerror = () => reject(req.error);
 		req.onsuccess = () => resolve(req.result);
-		req.onupgradeneeded = event => onUpgrade(req.result, event);
+		req.onupgradeneeded = () => onUpgrade(req.result, req.transaction!);
 	});
 }
