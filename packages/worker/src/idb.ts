@@ -5,6 +5,14 @@ export function request<T>(req: IDBRequest<T>): Promise<T> {
 	});
 }
 
+export function transaction(tx: IDBTransaction): Promise<void> {
+	return new Promise((resolve, reject) => {
+		tx.oncomplete = () => resolve();
+		tx.onerror = () => reject(tx.error);
+		tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
+	});
+}
+
 export function openDB(
 	name: string,
 	version: number,

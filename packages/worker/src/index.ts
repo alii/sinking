@@ -1,4 +1,4 @@
-import { openDB, request } from './idb.ts';
+import { openDB, request, transaction } from './idb.ts';
 import { broadcast, reply, replyError } from './messages.ts';
 import { applySchema } from './schema.ts';
 import type { ClientMessage, DatabaseSchema, WorkerMessage } from './types.ts';
@@ -32,30 +32,54 @@ async function handleMessage(message: ClientMessage, port: MessagePort): Promise
 		const readonly =
 			message.type === 'get' || message.type === 'getAll' || message.type === 'subscribe';
 		const tx = db.transaction(message.store, readonly ? 'readonly' : 'readwrite');
-		const store = tx.objectStore(message.store);
+		const objectStore = tx.objectStore(message.store);
 
 		switch (message.type) {
 			case 'get': {
-				reply(port, message.id, await request(store.get(message.key)));
+				reply(port, message.id, await request(objectStore.get(message.key)));
 				break;
 			}
 
 			case 'put': {
-				await request(store.put(message.value, message.key));
+				await request(objectStore.put(message.value, message.key));
 				reply(port, message.id, undefined);
 				broadcast(ports, message.store, message.key, message.value, port);
 				break;
 			}
 
 			case 'delete': {
-				await request(store.delete(message.key));
+				await request(objectStore.delete(message.key));
 				reply(port, message.id, undefined);
 				broadcast(ports, message.store, message.key, undefined, port);
 				break;
 			}
 
 			case 'getAll': {
-				reply(port, message.id, await request(store.getAll()));
+				reply(port, message.id, await request(objectStore.getAll()));
+				break;
+			}
+
+			case 'bulkPut': {
+				for (const item of message.items) {
+					objectStore.put(item.value, item.key);
+				}
+				await transaction(tx);
+				reply(port, message.id, undefined);
+				for (const item of message.items) {
+					broadcast(ports, message.store, item.key, item.value, port);
+				}
+				break;
+			}
+
+			case 'bulkDelete': {
+				for (const key of message.keys) {
+					objectStore.delete(key);
+				}
+				await transaction(tx);
+				reply(port, message.id, undefined);
+				for (const key of message.keys) {
+					broadcast(ports, message.store, key, undefined, port);
+				}
 				break;
 			}
 
