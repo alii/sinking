@@ -4,9 +4,13 @@
 	"workspaces": [
 		"packages/*"
 	],
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
 	"devDependencies": {
 		"@sww/core": "workspace:*",
 		"@sww/worker": "workspace:*",
-		"@types/bun": "latest"
+		"@types/bun": "latest",
+		"typescript": "^5.9.3"
 	}
 }

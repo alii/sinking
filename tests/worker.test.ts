@@ -1,6 +1,10 @@
 import { expect, test } from 'bun:test';
-import { example } from '@sww/worker';
+import type { ClientMessage, WorkerMessage } from '@sww/worker';
 
-test('example', () => {
-	expect(example).toBeFunction();
+test('message types are defined', () => {
+	const clientMsg: ClientMessage = { type: 'get', id: '1', store: 'data', key: 'test' };
+	const workerMsg: WorkerMessage = { type: 'result', id: '1', value: null };
+
+	expect(clientMsg.type).toBe('get');
+	expect(workerMsg.type).toBe('result');
 });

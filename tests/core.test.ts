@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
-import { hello } from '@sww/core';
+import { SWWClient } from '@sww/core';
 
-test('hello', () => {
-	expect(hello()).toBe('hello from core');
+test('SWWClient is exported', () => {
+	expect(SWWClient).toBeFunction();
 });
