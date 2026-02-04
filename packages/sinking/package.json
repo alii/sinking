@@ -39,7 +39,7 @@
 	],
 	"scripts": {
 		"release": "bun run build && bun publish --access public",
-		"build": "bunup src/core.ts src/worker.ts src/react.ts --format esm --dts --packages bundle --external react"
+		"build": "bunup src/core.ts src/worker.ts src/react.ts --format esm --dts.resolve --dts.splitting --packages bundle --external react"
 	},
 	"peerDependencies": {
 		"react": ">=19"
