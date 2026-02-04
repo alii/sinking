@@ -3,6 +3,5 @@
 	"compilerOptions": {
 		"lib": ["ESNext", "DOM"]
 	},
-	"include": ["src"],
-	"exclude": ["src/worker.ts"]
+	"include": ["src"]
 }

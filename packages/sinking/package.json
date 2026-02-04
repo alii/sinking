@@ -1,11 +1,15 @@
 {
 	"name": "sinking",
 	"version": "0.0.1",
+	"type": "module",
 	"exports": {
 		"./package.json": "./package.json",
-		"./core": "./src/core.ts",
-		"./worker": "./src/worker.ts",
-		"./react": "./src/react.ts"
+		"./core": "./dist/core.js",
+		"./worker": "./dist/worker.js",
+		"./react": "./dist/react.js"
+	},
+	"scripts": {
+		"build": "bunup src/core.ts src/worker.ts src/react.ts --format esm --dts"
 	},
 	"dependencies": {
 		"@sww/core": "workspace:*",
@@ -14,5 +18,8 @@
 	},
 	"peerDependencies": {
 		"react": ">=19"
+	},
+	"devDependencies": {
+		"bunup": "^0.16.22"
 	}
 }
