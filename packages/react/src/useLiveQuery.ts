@@ -4,12 +4,19 @@ import { useEffect, useEffectEvent, useState } from 'react';
 export function useLiveQuery<T>(
 	client: SWWClient,
 	queryFn: () => Promise<T>,
+	deps: React.DependencyList,
 	defaultValue?: T,
 ): T | undefined;
-export function useLiveQuery<T>(client: SWWClient, queryFn: () => Promise<T>, defaultValue: T): T;
 export function useLiveQuery<T>(
 	client: SWWClient,
 	queryFn: () => Promise<T>,
+	deps: React.DependencyList,
+	defaultValue: T,
+): T;
+export function useLiveQuery<T>(
+	client: SWWClient,
+	queryFn: () => Promise<T>,
+	deps: React.DependencyList,
 	defaultValue?: T,
 ): T | undefined {
 	const [result, setResult] = useState<T | undefined>(defaultValue);
@@ -33,7 +40,8 @@ export function useLiveQuery<T>(
 			cancelled = true;
 			unsubscribe();
 		};
-	}, [client]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [client, ...deps]);
 
 	return result;
 }
