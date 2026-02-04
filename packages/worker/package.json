@@ -1,0 +1,8 @@
+{
+	"name": "@sww/worker",
+	"version": "0.0.1",
+	"exports": {
+		"./package.json": "./package.json",
+		".": "./src/index.ts"
+	}
+}

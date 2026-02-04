@@ -1,0 +1,12 @@
+{
+	"name": "sww",
+	"private": true,
+	"workspaces": [
+		"packages/*"
+	],
+	"devDependencies": {
+		"@sww/core": "workspace:*",
+		"@sww/worker": "workspace:*",
+		"@types/bun": "latest"
+	}
+}
