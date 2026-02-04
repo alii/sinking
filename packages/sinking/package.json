@@ -14,6 +14,7 @@
 		"./README.md"
 	],
 	"scripts": {
+		"release": "bun run build && bun publish --access public",
 		"build": "bunup src/core.ts src/worker.ts src/react.ts --format esm --dts --packages bundle --external react"
 	},
 	"peerDependencies": {
