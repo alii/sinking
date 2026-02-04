@@ -8,6 +8,11 @@
 		"./worker": "./dist/worker.js",
 		"./react": "./dist/react.js"
 	},
+	"files": [
+		"./package.json",
+		"./dist",
+		"./README.md"
+	],
 	"scripts": {
 		"build": "bunup src/core.ts src/worker.ts src/react.ts --format esm --dts"
 	},
