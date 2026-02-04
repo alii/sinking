@@ -15,8 +15,7 @@
       "name": "example",
       "version": "0.0.1",
       "dependencies": {
-        "@sww/core": "workspace:*",
-        "@sww/worker": "workspace:*",
+        "sinking": "workspace:*",
       },
     },
     "packages/core": {

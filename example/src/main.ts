@@ -1,5 +1,4 @@
-import { SWWClient } from '@sww/core';
-import type { DatabaseSchema } from '@sww/worker';
+import { SWWClient, type DatabaseSchema } from 'sinking/core';
 
 interface Todo {
 	id: string;

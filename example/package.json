@@ -6,7 +6,6 @@
 		"dev": "bun --bun serve"
 	},
 	"dependencies": {
-		"@sww/core": "workspace:*",
-		"@sww/worker": "workspace:*"
+		"sinking": "workspace:*"
 	}
 }
