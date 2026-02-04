@@ -14,17 +14,15 @@
 		"./README.md"
 	],
 	"scripts": {
-		"build": "bunup src/core.ts src/worker.ts src/react.ts --format esm --dts"
-	},
-	"dependencies": {
-		"@sww/core": "workspace:*",
-		"@sww/react": "workspace:*",
-		"@sww/worker": "workspace:*"
+		"build": "bunup src/core.ts src/worker.ts src/react.ts --format esm --dts --packages bundle --external react"
 	},
 	"peerDependencies": {
 		"react": ">=19"
 	},
 	"devDependencies": {
+		"@sww/core": "workspace:*",
+		"@sww/react": "workspace:*",
+		"@sww/worker": "workspace:*",
 		"bunup": "^0.16.22"
 	}
 }
