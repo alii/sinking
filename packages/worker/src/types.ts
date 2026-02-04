@@ -23,6 +23,10 @@ export interface BulkItem {
 	value: unknown;
 }
 
+export type BatchOperation =
+	| { type: 'put'; store: string; key: IDBValidKey; value: unknown }
+	| { type: 'delete'; store: string; key: IDBValidKey };
+
 export type OperationMessage =
 	| { type: 'get'; id: string; store: string; key: IDBValidKey }
 	| { type: 'put'; id: string; store: string; key: IDBValidKey; value: unknown }
@@ -30,6 +34,7 @@ export type OperationMessage =
 	| { type: 'getAll'; id: string; store: string }
 	| { type: 'bulkPut'; id: string; store: string; items: BulkItem[] }
 	| { type: 'bulkDelete'; id: string; store: string; keys: IDBValidKey[] }
+	| { type: 'batch'; id: string; operations: BatchOperation[] }
 	| { type: 'subscribe'; id: string; store: string };
 
 export type ClientMessage = InitMessage | OperationMessage;

@@ -1,4 +1,4 @@
-import type { BulkItem, ClientMessage, DatabaseSchema, OperationMessage, WorkerMessage } from '@sinking/worker/types';
+import type { BatchOperation, BulkItem, ClientMessage, DatabaseSchema, OperationMessage, WorkerMessage } from '@sinking/worker/types';
 import type { DistributedOmit } from './types.ts';
 
 export type ChangeListener = (store: string, key: IDBValidKey, value: unknown) => void;
@@ -100,6 +100,10 @@ export class SWWClient {
 
 	async bulkDelete(store: string, keys: IDBValidKey[]): Promise<void> {
 		await this.send({ type: 'bulkDelete', store, keys });
+	}
+
+	async batch(operations: BatchOperation[]): Promise<void> {
+		await this.send({ type: 'batch', operations });
 	}
 
 	onChange(listener: ChangeListener): () => void {
