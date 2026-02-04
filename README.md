@@ -1,1 +1,1 @@
-packages/sww/README.md
+packages/sinking/README.md

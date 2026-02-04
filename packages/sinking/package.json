@@ -16,12 +16,12 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/alii/sww.git",
+		"url": "git+https://github.com/alii/sinking.git",
 		"directory": "packages/sinking"
 	},
-	"homepage": "https://github.com/alii/sww#readme",
+	"homepage": "https://github.com/alii/sinking#readme",
 	"bugs": {
-		"url": "https://github.com/alii/sww/issues"
+		"url": "https://github.com/alii/sinking/issues"
 	},
 	"keywords": [
 		"indexeddb",
