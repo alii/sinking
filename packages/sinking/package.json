@@ -1,0 +1,18 @@
+{
+	"name": "sinking",
+	"version": "0.0.1",
+	"exports": {
+		"./package.json": "./package.json",
+		"./core": "./src/core.ts",
+		"./worker": "./src/worker.ts",
+		"./react": "./src/react.ts"
+	},
+	"dependencies": {
+		"@sww/core": "workspace:*",
+		"@sww/react": "workspace:*",
+		"@sww/worker": "workspace:*"
+	},
+	"peerDependencies": {
+		"react": ">=19"
+	}
+}

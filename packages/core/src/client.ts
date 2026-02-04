@@ -1,4 +1,4 @@
-import type { ClientMessage, DatabaseSchema, OperationMessage, WorkerMessage } from '@sww/worker';
+import type { ClientMessage, DatabaseSchema, OperationMessage, WorkerMessage } from '@sww/worker/types';
 import type { DistributedOmit } from './types.ts';
 
 export type ChangeListener = (store: string, key: IDBValidKey, value: unknown) => void;

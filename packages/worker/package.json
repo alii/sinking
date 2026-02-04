@@ -4,6 +4,6 @@
 	"exports": {
 		"./package.json": "./package.json",
 		".": "./src/index.ts",
-		"./start": "./src/start.ts"
+		"./types": "./src/types.ts"
 	}
 }

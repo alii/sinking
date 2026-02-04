@@ -36,6 +36,18 @@
         "react": "^19.2.4",
       },
     },
+    "packages/sinking": {
+      "name": "sinking",
+      "version": "0.0.1",
+      "dependencies": {
+        "@sww/core": "workspace:*",
+        "@sww/react": "workspace:*",
+        "@sww/worker": "workspace:*",
+      },
+      "peerDependencies": {
+        "react": ">=18",
+      },
+    },
     "packages/worker": {
       "name": "@sww/worker",
       "version": "0.0.1",
@@ -61,6 +73,8 @@
     "example": ["example@workspace:example"],
 
     "react": ["react@19.2.4", "", {}, "sha512-9nfp2hYpCwOjAN+8TZFGhtWEwgvWHXqESH8qT89AT/lWklpLON22Lc8pEtnpsZz7VmawabSU0gCjnj8aC0euHQ=="],
+
+    "sinking": ["sinking@workspace:packages/sinking"],
 
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 

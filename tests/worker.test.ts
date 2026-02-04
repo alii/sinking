@@ -1,5 +1,5 @@
+import type { ClientMessage, WorkerMessage } from '@sww/worker/types';
 import { expect, test } from 'bun:test';
-import type { ClientMessage, WorkerMessage } from '@sww/worker';
 
 test('message types are defined', () => {
 	const clientMsg: ClientMessage = { type: 'get', id: '1', store: 'data', key: 'test' };

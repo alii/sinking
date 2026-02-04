@@ -1,4 +1,20 @@
-import type { DatabaseSchema } from './schema.ts';
+export interface IndexSchema {
+	keyPath: string | string[];
+	unique?: boolean;
+	multiEntry?: boolean;
+}
+
+export interface StoreSchema {
+	keyPath?: string | string[];
+	autoIncrement?: boolean;
+	indexes?: Record<string, IndexSchema>;
+}
+
+export interface DatabaseSchema {
+	name: string;
+	version: number;
+	stores: Record<string, StoreSchema>;
+}
 
 export type InitMessage = { type: 'init'; schema: DatabaseSchema };
 

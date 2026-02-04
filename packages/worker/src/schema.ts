@@ -1,20 +1,4 @@
-export interface IndexSchema {
-	keyPath: string | string[];
-	unique?: boolean;
-	multiEntry?: boolean;
-}
-
-export interface StoreSchema {
-	keyPath?: string | string[];
-	autoIncrement?: boolean;
-	indexes?: Record<string, IndexSchema>;
-}
-
-export interface DatabaseSchema {
-	name: string;
-	version: number;
-	stores: Record<string, StoreSchema>;
-}
+import type { DatabaseSchema } from './types.ts';
 
 export function applySchema(db: IDBDatabase, tx: IDBTransaction, schema: DatabaseSchema): void {
 	for (const [storeName, storeSchema] of Object.entries(schema.stores)) {
