@@ -1,5 +1,5 @@
 {
-	"name": "sww",
+	"name": "sinking",
 	"version": "0.0.1",
 	"description": "Cross-tab IndexedDB sync via SharedWorker",
 	"type": "module",
@@ -17,7 +17,7 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/alii/sww.git",
-		"directory": "packages/sww"
+		"directory": "packages/sinking"
 	},
 	"homepage": "https://github.com/alii/sww#readme",
 	"bugs": {

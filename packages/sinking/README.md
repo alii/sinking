@@ -1,11 +1,11 @@
-# sww
+# sinking
 
 Cross-tab IndexedDB sync via SharedWorker.
 
 ## Install
 
 ```bash
-bun add sww
+bun add sinking
 ```
 
 ## Setup
@@ -14,13 +14,13 @@ bun add sww
 
 ```ts
 // worker.ts
-import 'sww/worker';
+import 'sinking/worker';
 ```
 
 ### 2. Create your client
 
 ```ts
-import { SWWClient, type DatabaseSchema } from 'sww/core';
+import { SWWClient, type DatabaseSchema } from 'sinking/core';
 
 const schema: DatabaseSchema = {
 	name: 'myapp',
@@ -42,7 +42,7 @@ const client = new SWWClient({
 ### Core
 
 ```ts
-import { SWWClient, type DatabaseSchema } from 'sww/core';
+import { SWWClient, type DatabaseSchema } from 'sinking/core';
 
 // CRUD operations
 await client.get<Todo>('todos', id);
@@ -59,7 +59,7 @@ const unsubscribe = client.onChange((store, key, value) => {
 ### React
 
 ```ts
-import { useLiveQuery } from 'sww/react';
+import { useLiveQuery } from 'sinking/react';
 
 function Todos() {
   const todos = useLiveQuery(
@@ -100,7 +100,7 @@ const schema: DatabaseSchema = {
 
 ## How it works
 
-1. `sww/worker` starts a SharedWorker that manages IndexedDB
+1. `sinking/worker` starts a SharedWorker that manages IndexedDB
 2. All tabs connect to the same worker instance
 3. When one tab writes, the worker broadcasts to all other tabs
 4. `useLiveQuery` re-runs queries on any change
