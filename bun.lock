@@ -39,12 +39,10 @@
     "packages/sinking": {
       "name": "sinking",
       "version": "0.0.1",
-      "dependencies": {
+      "devDependencies": {
         "@sww/core": "workspace:*",
         "@sww/react": "workspace:*",
         "@sww/worker": "workspace:*",
-      },
-      "devDependencies": {
         "bunup": "^0.16.22",
       },
       "peerDependencies": {

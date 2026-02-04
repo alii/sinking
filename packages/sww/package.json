@@ -1,6 +1,7 @@
 {
-	"name": "sinking",
+	"name": "sww",
 	"version": "0.0.1",
+	"description": "Cross-tab IndexedDB sync via SharedWorker",
 	"type": "module",
 	"exports": {
 		"./package.json": "./package.json",
@@ -8,6 +9,29 @@
 		"./worker": "./dist/worker.js",
 		"./react": "./dist/react.js"
 	},
+	"license": "Apache-2.0",
+	"author": {
+		"name": "Alistair Smith",
+		"url": "https://alistair.sh"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/alii/sww.git",
+		"directory": "packages/sww"
+	},
+	"homepage": "https://github.com/alii/sww#readme",
+	"bugs": {
+		"url": "https://github.com/alii/sww/issues"
+	},
+	"keywords": [
+		"indexeddb",
+		"sharedworker",
+		"cross-tab",
+		"sync",
+		"offline",
+		"react",
+		"hooks"
+	],
 	"files": [
 		"./package.json",
 		"./dist",
