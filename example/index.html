@@ -3,7 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>SWW Example</title>
+	<title>Sinking Example</title>
 	<style>
 		body { font-family: system-ui; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
 		input { padding: 0.5rem; margin-right: 0.5rem; }
@@ -14,13 +14,7 @@
 	</style>
 </head>
 <body>
-	<h1>SWW Todo Example</h1>
-	<p>Open this page in multiple tabs to see cross-tab sync.</p>
-	<form id="form">
-		<input type="text" id="input" placeholder="Add todo..." required>
-		<button type="submit">Add</button>
-	</form>
-	<ul id="list"></ul>
-	<script type="module" src="./src/main.ts"></script>
+	<div id="root"></div>
+	<script type="module" src="./src/main.tsx"></script>
 </body>
 </html>

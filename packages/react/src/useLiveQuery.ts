@@ -1,47 +1,33 @@
-import type { SWWClient } from '@sinking/core';
-import { useEffect, useEffectEvent, useState } from 'react';
+import { descriptionKey, type LazyQuery, type SWWClient } from '@sinking/core';
+import { useCallback, useSyncExternalStore } from 'react';
 
 export function useLiveQuery<T>(
 	client: SWWClient,
-	queryFn: () => Promise<T>,
-	deps: React.DependencyList,
-	defaultValue?: T,
-): T | undefined;
-export function useLiveQuery<T>(
-	client: SWWClient,
-	queryFn: () => Promise<T>,
-	deps: React.DependencyList,
+	queryFn: () => LazyQuery<T>,
 	defaultValue: T,
 ): T;
 export function useLiveQuery<T>(
 	client: SWWClient,
-	queryFn: () => Promise<T>,
-	deps: React.DependencyList,
+	queryFn: () => LazyQuery<T>,
+	defaultValue?: T,
+): T | undefined;
+export function useLiveQuery<T>(
+	client: SWWClient,
+	queryFn: () => LazyQuery<T>,
 	defaultValue?: T,
 ): T | undefined {
-	const [result, setResult] = useState<T | undefined>(defaultValue);
-	const query = useEffectEvent(queryFn);
+	const query = queryFn();
+	const key = descriptionKey(query.description);
 
-	useEffect(() => {
-		let cancelled = false;
+	const subscribe = useCallback(
+		(onStoreChange: () => void) => client.subscribe(query.description, onStoreChange),
+		[client, key],
+	);
 
-		const runQuery = async () => {
-			const data = await query();
-			if (!cancelled) setResult(data);
-		};
+	const getSnapshot = useCallback(
+		() => client.getCached<T>(query.description) ?? defaultValue,
+		[client, key, defaultValue],
+	);
 
-		runQuery();
-
-		const unsubscribe = client.onChange(() => {
-			runQuery();
-		});
-
-		return () => {
-			cancelled = true;
-			unsubscribe();
-		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [client, ...deps]);
-
-	return result;
+	return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }

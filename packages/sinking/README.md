@@ -2,6 +2,8 @@
 
 Cross-tab IndexedDB sync via SharedWorker.
 
+> **Note:** This library is experimental. The API may change.
+
 ## Install
 
 ```bash
@@ -44,15 +46,32 @@ const client = new SWWClient({
 ```ts
 import { SWWClient, type DatabaseSchema } from 'sinking/core';
 
-// CRUD operations
-await client.get<Todo>('todos', id);
-await client.getAll<Todo>('todos');
+// Read (returns lazy thenable)
+const todo = await client.get<Todo>('todos', id);
+const todos = await client.getAll<Todo>('todos');
+
+// Write
 await client.put('todos', id, { id, text: 'Hello' });
 await client.delete('todos', id);
 
-// Subscribe to changes (cross-tab)
-const unsubscribe = client.onChange((store, key, value) => {
-	console.log('Changed:', store, key, value);
+// Bulk operations
+await client.bulkPut('todos', [
+  { key: 'id1', value: todo1 },
+  { key: 'id2', value: todo2 },
+]);
+await client.bulkDelete('todos', ['id1', 'id2']);
+
+// Atomic transactions across stores
+await client.batch([
+  { type: 'put', store: 'todos', key: id, value: todo },
+  { type: 'put', store: 'queue', key: queueId, value: queueItem },
+]);
+
+// Subscribe to a specific query
+const query = client.getAll<Todo>('todos');
+const unsubscribe = client.subscribe(query.description, () => {
+	const todos = client.getCached<Todo[]>(query.description);
+	console.log('Todos updated:', todos);
 });
 ```
 
@@ -62,19 +81,15 @@ const unsubscribe = client.onChange((store, key, value) => {
 import { useLiveQuery } from 'sinking/react';
 
 function Todos() {
-  const todos = useLiveQuery(
-    client,
-    () => client.getAll<Todo>('todos'),
-    []
-  );
-
-  const todo = useLiveQuery(
-    client,
-    () => client.get<Todo>('todos', id),
-    [id]  // re-fetches when id changes
-  );
+  const todos = useLiveQuery(client, () => client.getAll<Todo>('todos'), []);
 
   return <ul>{todos?.map(t => <li key={t.id}>{t.text}</li>)}</ul>;
+}
+
+function Todo({ id }: { id: string }) {
+  const todo = useLiveQuery(client, () => client.get<Todo>('todos', id));
+
+  return <div>{todo?.text}</div>;
 }
 ```
 
@@ -103,8 +118,9 @@ const schema: DatabaseSchema = {
 1. `sinking/worker` starts a SharedWorker that manages IndexedDB
 2. All tabs connect to the same worker instance
 3. When one tab writes, the worker broadcasts to all other tabs
-4. `useLiveQuery` re-runs queries on any change
+4. Client caches query results and invalidates on changes
+5. `useLiveQuery` uses `useSyncExternalStore` for efficient React integration
 
 ## License
 
-MIT
+Apache-2.0
