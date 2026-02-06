@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { SWWClient, type DatabaseSchema } from 'sinking/core';
+import { Sinking, type DatabaseSchema } from 'sinking/core';
 import { useLiveQuery } from 'sinking/react';
 
 interface Todo {
@@ -16,7 +16,7 @@ const schema: DatabaseSchema = {
 	},
 };
 
-const client = new SWWClient({
+const client = new Sinking({
 	workerUrl: '/worker.js',
 	schema,
 });

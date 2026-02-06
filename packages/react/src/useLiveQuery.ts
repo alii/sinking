@@ -1,18 +1,14 @@
-import { descriptionKey, type LazyQuery, type SWWClient } from '@sinking/core';
+import { descriptionKey, type LazyQuery, type Sinking } from '@sinking/core';
 import { useCallback, useSyncExternalStore } from 'react';
 
+export function useLiveQuery<T>(client: Sinking, queryFn: () => LazyQuery<T>, defaultValue: T): T;
 export function useLiveQuery<T>(
-	client: SWWClient,
-	queryFn: () => LazyQuery<T>,
-	defaultValue: T,
-): T;
-export function useLiveQuery<T>(
-	client: SWWClient,
+	client: Sinking,
 	queryFn: () => LazyQuery<T>,
 	defaultValue?: T,
 ): T | undefined;
 export function useLiveQuery<T>(
-	client: SWWClient,
+	client: Sinking,
 	queryFn: () => LazyQuery<T>,
 	defaultValue?: T,
 ): T | undefined {

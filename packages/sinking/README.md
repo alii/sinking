@@ -22,7 +22,7 @@ import 'sinking/worker';
 ### 2. Create your client
 
 ```ts
-import { SWWClient, type DatabaseSchema } from 'sinking/core';
+import { Sinking, type DatabaseSchema } from 'sinking/core';
 
 const schema: DatabaseSchema = {
 	name: 'myapp',
@@ -33,7 +33,7 @@ const schema: DatabaseSchema = {
 	},
 };
 
-const client = new SWWClient({
+const client = new Sinking({
 	workerUrl: new URL('./worker.ts', import.meta.url),
 	schema,
 });
@@ -44,7 +44,7 @@ const client = new SWWClient({
 ### Core
 
 ```ts
-import { SWWClient, type DatabaseSchema } from 'sinking/core';
+import { Sinking, type DatabaseSchema } from 'sinking/core';
 
 // Read (returns lazy thenable)
 const todo = await client.get<Todo>('todos', id);
@@ -56,15 +56,15 @@ await client.delete('todos', id);
 
 // Bulk operations
 await client.bulkPut('todos', [
-  { key: 'id1', value: todo1 },
-  { key: 'id2', value: todo2 },
+	{ key: 'id1', value: todo1 },
+	{ key: 'id2', value: todo2 },
 ]);
 await client.bulkDelete('todos', ['id1', 'id2']);
 
 // Atomic transactions across stores
 await client.batch([
-  { type: 'put', store: 'todos', key: id, value: todo },
-  { type: 'put', store: 'queue', key: queueId, value: queueItem },
+	{ type: 'put', store: 'todos', key: id, value: todo },
+	{ type: 'put', store: 'queue', key: queueId, value: queueItem },
 ]);
 
 // Subscribe to a specific query

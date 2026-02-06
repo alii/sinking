@@ -1,5 +1,5 @@
 import { openDB, request, transaction } from './idb.ts';
-import { broadcast, reply, replyError } from './messages.ts';
+import { broadcast, broadcastBatch, reply, replyError } from './messages.ts';
 import { applySchema } from './schema.ts';
 import type { BatchOperation, ClientMessage, DatabaseSchema, OperationMessage, WorkerMessage } from './types.ts';
 
@@ -7,12 +7,10 @@ declare const self: SharedWorkerGlobalScope;
 
 const ports = new Set<MessagePort>();
 let db: IDBDatabase | null = null;
-let schema: DatabaseSchema | null = null;
 
-async function init(s: DatabaseSchema): Promise<void> {
-	schema = s;
+async function init(schema: DatabaseSchema): Promise<void> {
 	db = await openDB(schema.name, schema.version, (database, tx) => {
-		applySchema(database, tx, schema!);
+		applySchema(database, tx, schema);
 	});
 }
 
@@ -38,6 +36,16 @@ async function getAll(db: IDBDatabase, store: string) {
 	return request(tx.objectStore(store).getAll());
 }
 
+async function getByIndex(db: IDBDatabase, store: string, indexName: string, key: IDBValidKey) {
+	const tx = db.transaction(store, 'readonly');
+	return request(tx.objectStore(store).index(indexName).get(key));
+}
+
+async function getAllByIndex(db: IDBDatabase, store: string, indexName: string, key: IDBValidKey) {
+	const tx = db.transaction(store, 'readonly');
+	return request(tx.objectStore(store).index(indexName).getAll(key));
+}
+
 async function bulkPut(db: IDBDatabase, store: string, items: { key: IDBValidKey; value: unknown }[]) {
 	const tx = db.transaction(store, 'readwrite');
 	const objectStore = tx.objectStore(store);
@@ -45,9 +53,10 @@ async function bulkPut(db: IDBDatabase, store: string, items: { key: IDBValidKey
 		objectStore.put(item.value, item.key);
 	}
 	await transaction(tx);
-	for (const item of items) {
-		broadcast(ports, store, item.key, item.value);
-	}
+	broadcastBatch(
+		ports,
+		items.map(item => ({ store, key: item.key, value: item.value })),
+	);
 }
 
 async function bulkDelete(db: IDBDatabase, store: string, keys: IDBValidKey[]) {
@@ -57,9 +66,10 @@ async function bulkDelete(db: IDBDatabase, store: string, keys: IDBValidKey[]) {
 		objectStore.delete(key);
 	}
 	await transaction(tx);
-	for (const key of keys) {
-		broadcast(ports, store, key, undefined);
-	}
+	broadcastBatch(
+		ports,
+		keys.map(key => ({ store, key, value: undefined })),
+	);
 }
 
 async function batch(db: IDBDatabase, operations: BatchOperation[]) {
@@ -74,9 +84,14 @@ async function batch(db: IDBDatabase, operations: BatchOperation[]) {
 		}
 	}
 	await transaction(tx);
-	for (const op of operations) {
-		broadcast(ports, op.store, op.key, op.type === 'put' ? op.value : undefined);
-	}
+	broadcastBatch(
+		ports,
+		operations.map(op => ({
+			store: op.store,
+			key: op.key,
+			value: op.type === 'put' ? op.value : undefined,
+		})),
+	);
 }
 
 async function handleOperation(db: IDBDatabase, message: OperationMessage, port: MessagePort) {
@@ -91,6 +106,10 @@ async function handleOperation(db: IDBDatabase, message: OperationMessage, port:
 			return reply(port, message.id, undefined);
 		case 'getAll':
 			return reply(port, message.id, await getAll(db, message.store));
+		case 'getByIndex':
+			return reply(port, message.id, await getByIndex(db, message.store, message.indexName, message.key));
+		case 'getAllByIndex':
+			return reply(port, message.id, await getAllByIndex(db, message.store, message.indexName, message.key));
 		case 'bulkPut':
 			await bulkPut(db, message.store, message.items);
 			return reply(port, message.id, undefined);
@@ -99,8 +118,6 @@ async function handleOperation(db: IDBDatabase, message: OperationMessage, port:
 			return reply(port, message.id, undefined);
 		case 'batch':
 			await batch(db, message.operations);
-			return reply(port, message.id, undefined);
-		case 'subscribe':
 			return reply(port, message.id, undefined);
 	}
 }

@@ -1,9 +1,18 @@
-import type { BatchOperation, BulkItem, ClientMessage, DatabaseSchema, OperationMessage, WorkerMessage } from '@sinking/worker/types';
+import type {
+	BatchOperation,
+	BulkItem,
+	ClientMessage,
+	DatabaseSchema,
+	OperationMessage,
+	WorkerMessage,
+} from '@sinking/worker/types';
 import type { DistributedOmit } from './types.ts';
 
 export type QueryDescription =
 	| { type: 'get'; store: string; key: IDBValidKey }
-	| { type: 'getAll'; store: string };
+	| { type: 'getAll'; store: string }
+	| { type: 'getByIndex'; store: string; indexName: string; key: IDBValidKey }
+	| { type: 'getAllByIndex'; store: string; indexName: string; key: IDBValidKey };
 
 export interface LazyQuery<T> {
 	description: QueryDescription;
@@ -23,7 +32,7 @@ interface CacheEntry<T = unknown> {
 
 export type SubscriptionListener = () => void;
 
-export interface SWWClientOptions {
+export interface SinkingOptions {
 	workerUrl: string | URL;
 	schema: DatabaseSchema;
 }
@@ -43,10 +52,16 @@ export function hashKey(key: IDBValidKey): string {
 }
 
 export function descriptionKey(desc: QueryDescription): string {
-	if (desc.type === 'get') {
-		return `get:${desc.store}:${hashKey(desc.key)}`;
+	switch (desc.type) {
+		case 'get':
+			return `get:${desc.store}:${hashKey(desc.key)}`;
+		case 'getAll':
+			return `getAll:${desc.store}`;
+		case 'getByIndex':
+			return `getByIndex:${desc.store}:${desc.indexName}:${hashKey(desc.key)}`;
+		case 'getAllByIndex':
+			return `getAllByIndex:${desc.store}:${desc.indexName}:${hashKey(desc.key)}`;
 	}
-	return `getAll:${desc.store}`;
 }
 
 export function keysEqual(a: IDBValidKey, b: IDBValidKey): boolean {
@@ -78,10 +93,11 @@ export function keysEqual(a: IDBValidKey, b: IDBValidKey): boolean {
 function isAffected(desc: QueryDescription, store: string, key: IDBValidKey): boolean {
 	if (desc.store !== store) return false;
 	if (desc.type === 'getAll') return true;
+	if (desc.type === 'getByIndex' || desc.type === 'getAllByIndex') return true;
 	return keysEqual(desc.key, key);
 }
 
-export class SWWClient {
+export class Sinking {
 	private worker: SharedWorker;
 	private port: MessagePort;
 	private idCounter = 0;
@@ -90,12 +106,13 @@ export class SWWClient {
 		{ resolve: (value: unknown) => void; reject: (error: Error) => void }
 	>();
 	private ready: Promise<void>;
+	private closed = false;
 
 	private cache = new Map<string, CacheEntry>();
 	private inFlight = new Map<string, Promise<unknown>>();
 	private subscribers = new Map<string, Set<SubscriptionListener>>();
 
-	constructor(options: SWWClientOptions) {
+	public constructor(options: SinkingOptions) {
 		this.worker = new SharedWorker(options.workerUrl, { type: 'module' });
 		this.port = this.worker.port;
 
@@ -115,7 +132,12 @@ export class SWWClient {
 			if (message.type === 'ready') return;
 
 			if (message.type === 'change') {
-				this.invalidate(message.store, message.key);
+				this.invalidateBatch([{ store: message.store, key: message.key }]);
+				return;
+			}
+
+			if (message.type === 'batch-change') {
+				this.invalidateBatch(message.changes);
 				return;
 			}
 
@@ -131,19 +153,43 @@ export class SWWClient {
 			}
 		};
 
+		this.worker.onerror = (event: ErrorEvent) => {
+			const error =
+				event.error instanceof Error
+					? event.error
+					: new Error(`Worker error: ${event.message}`, {
+							cause: event.error,
+						});
+
+			for (const [id, pending] of this.pending) {
+				pending.reject(error);
+				this.pending.delete(id);
+			}
+		};
+
 		this.port.start();
 		this.port.postMessage({ type: 'init', schema: options.schema } satisfies ClientMessage);
 	}
 
-	private async invalidate(store: string, key: IDBValidKey): Promise<void> {
+	private async invalidateBatch(
+		changes: Array<{ store: string; key: IDBValidKey }>,
+	): Promise<void> {
+		const affectedSet = new Set<string>();
 		const affected: QueryDescription[] = [];
-		for (const [, entry] of this.cache) {
-			if (isAffected(entry.description, store, key)) {
-				affected.push(entry.description);
+
+		for (const change of changes) {
+			for (const [, entry] of this.cache) {
+				if (isAffected(entry.description, change.store, change.key)) {
+					const key = descriptionKey(entry.description);
+					if (!affectedSet.has(key)) {
+						affectedSet.add(key);
+						affected.push(entry.description);
+					}
+				}
 			}
 		}
 
-		await Promise.all(affected.map(desc => this.refetch(desc)));
+		await Promise.allSettled(affected.map(desc => this.refetch(desc)));
 
 		for (const desc of affected) {
 			this.notify(descriptionKey(desc));
@@ -155,11 +201,7 @@ export class SWWClient {
 		this.cache.delete(key);
 		this.inFlight.delete(key);
 
-		const value =
-			description.type === 'get'
-				? await this.send({ type: 'get', store: description.store, key: description.key })
-				: await this.send({ type: 'getAll', store: description.store });
-
+		const value = await this.send(description);
 		this.cache.set(key, { value, description });
 	}
 
@@ -168,14 +210,15 @@ export class SWWClient {
 	}
 
 	private async send<T>(message: DistributedOmit<OperationMessage, 'id'>): Promise<T> {
+		if (this.closed) {
+			return Promise.reject(new Error('Client is closed'));
+		}
+
 		await this.ready;
 		const id = this.nextId();
 
 		return new Promise((resolve, reject) => {
-			this.pending.set(id, {
-				resolve: resolve as (value: unknown) => void,
-				reject,
-			});
+			this.pending.set(id, { resolve: resolve as (value: unknown) => void, reject });
 			this.port.postMessage({ ...message, id });
 		});
 	}
@@ -189,52 +232,53 @@ export class SWWClient {
 		}
 	}
 
-	private executeQuery<T>(description: QueryDescription): Promise<T> {
+	private query<T>(description: QueryDescription): LazyQuery<T> {
 		const key = descriptionKey(description);
 
-		const cached = this.cache.get(key);
-		if (cached) return Promise.resolve(cached.value as T);
+		const execute = (): Promise<T> => {
+			const cached = this.cache.get(key);
+			if (cached) return Promise.resolve(cached.value as T);
 
-		const existing = this.inFlight.get(key);
-		if (existing) return existing as Promise<T>;
+			const existing = this.inFlight.get(key);
+			if (existing) return existing as Promise<T>;
 
-		const promise = (
-			description.type === 'get'
-				? this.send<T>({ type: 'get', store: description.store, key: description.key })
-				: this.send<T>({ type: 'getAll', store: description.store })
-		).then(value => {
-			this.inFlight.delete(key);
-			this.cache.set(key, { value, description });
-			this.notify(key);
-			return value;
-		});
+			const promise = this.send<T>(description)
+				.then(value => {
+					this.cache.set(key, { value, description });
+					this.notify(key);
+					return value;
+				})
+				.finally(() => {
+					this.inFlight.delete(key);
+				});
 
-		this.inFlight.set(key, promise);
-		return promise;
+			this.inFlight.set(key, promise);
+			return promise;
+		};
+
+		execute();
+
+		return {
+			description,
+			then: (onfulfilled, onrejected) => execute().then(onfulfilled, onrejected),
+			catch: onrejected => execute().catch(onrejected),
+		};
 	}
 
 	get<T>(store: string, key: IDBValidKey): LazyQuery<T | undefined> {
-		const description: QueryDescription = { type: 'get', store, key };
-		this.executeQuery<T | undefined>(description);
-		return {
-			description,
-			then: (onfulfilled, onrejected) =>
-				this.executeQuery<T | undefined>(description).then(onfulfilled, onrejected),
-			catch: onrejected =>
-				this.executeQuery<T | undefined>(description).catch(onrejected),
-		};
+		return this.query({ type: 'get', store, key });
 	}
 
 	getAll<T>(store: string): LazyQuery<T[]> {
-		const description: QueryDescription = { type: 'getAll', store };
-		this.executeQuery<T[]>(description);
-		return {
-			description,
-			then: (onfulfilled, onrejected) =>
-				this.executeQuery<T[]>(description).then(onfulfilled, onrejected),
-			catch: onrejected =>
-				this.executeQuery<T[]>(description).catch(onrejected),
-		};
+		return this.query({ type: 'getAll', store });
+	}
+
+	getByIndex<T>(store: string, indexName: string, key: IDBValidKey): LazyQuery<T | undefined> {
+		return this.query({ type: 'getByIndex', store, indexName, key });
+	}
+
+	getAllByIndex<T>(store: string, indexName: string, key: IDBValidKey): LazyQuery<T[]> {
+		return this.query({ type: 'getAllByIndex', store, indexName, key });
 	}
 
 	getCached<T>(description: QueryDescription): T | undefined {
@@ -281,6 +325,15 @@ export class SWWClient {
 	}
 
 	close(): void {
+		if (this.closed) return;
+		this.closed = true;
+
+		const error = new Error('Client is closed');
+		for (const [id, pending] of this.pending) {
+			pending.reject(error);
+			this.pending.delete(id);
+		}
+
 		this.port.close();
 	}
 }

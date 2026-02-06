@@ -32,15 +32,23 @@ export type OperationMessage =
 	| { type: 'put'; id: string; store: string; key: IDBValidKey; value: unknown }
 	| { type: 'delete'; id: string; store: string; key: IDBValidKey }
 	| { type: 'getAll'; id: string; store: string }
+	| { type: 'getByIndex'; id: string; store: string; indexName: string; key: IDBValidKey }
+	| { type: 'getAllByIndex'; id: string; store: string; indexName: string; key: IDBValidKey }
 	| { type: 'bulkPut'; id: string; store: string; items: BulkItem[] }
 	| { type: 'bulkDelete'; id: string; store: string; keys: IDBValidKey[] }
-	| { type: 'batch'; id: string; operations: BatchOperation[] }
-	| { type: 'subscribe'; id: string; store: string };
+	| { type: 'batch'; id: string; operations: BatchOperation[] };
 
 export type ClientMessage = InitMessage | OperationMessage;
+
+export interface BatchChangeItem {
+	store: string;
+	key: IDBValidKey;
+	value: unknown | undefined;
+}
 
 export type WorkerMessage =
 	| { type: 'ready' }
 	| { type: 'result'; id: string; value: unknown }
 	| { type: 'error'; id: string; error: string }
-	| { type: 'change'; store: string; key: IDBValidKey; value: unknown | undefined };
+	| { type: 'change'; store: string; key: IDBValidKey; value: unknown | undefined }
+	| { type: 'batch-change'; changes: BatchChangeItem[] };
