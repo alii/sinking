@@ -10,6 +10,7 @@ export {
 	descriptionKey,
 	hashKey,
 	keysEqual,
+	type KeyRange,
 	type LazyQuery,
 	type QueryDescription,
 	type SinkingOptions,

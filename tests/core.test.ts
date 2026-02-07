@@ -23,6 +23,12 @@ describe('hashKey', () => {
 		expect(hashKey([1, 2, 3])).toBe('a:[n:1,n:2,n:3]');
 		expect(hashKey([])).toBe('a:[]');
 	});
+
+	test('hashes key ranges', () => {
+		expect(hashKey({ lower: ['a'], upper: ['b'] })).toBe('kr:a:[s:a]:a:[s:b]:false:false');
+		expect(hashKey({ lower: 1, lowerOpen: true })).toBe('kr:n:1::true:false');
+		expect(hashKey({ upper: 'z', upperOpen: true })).toBe('kr::s:z:false:true');
+	});
 });
 
 describe('keysEqual', () => {
@@ -67,5 +73,39 @@ describe('descriptionKey', () => {
 		expect(
 			descriptionKey({ type: 'getAllByIndex', store: 'todos', indexName: 'byStatus', key: 'done' }),
 		).toBe('getAllByIndex:todos:byStatus:s:done');
+	});
+
+	test('generates key for count query', () => {
+		expect(descriptionKey({ type: 'count', store: 'todos' })).toBe('count:todos');
+	});
+
+	test('generates key for countByIndex query', () => {
+		expect(
+			descriptionKey({ type: 'countByIndex', store: 'todos', indexName: 'byStatus', key: 'done' }),
+		).toBe('countByIndex:todos:byStatus:s:done');
+	});
+
+	test('generates key for getAllByIndex with KeyRange', () => {
+		expect(
+			descriptionKey({
+				type: 'getAllByIndex',
+				store: 'syncQueue',
+				indexName: 'byEntity',
+				key: { lower: ['masterlist'], upper: ['masterlist', []] },
+			}),
+		).toBe(
+			'getAllByIndex:syncQueue:byEntity:kr:a:[s:masterlist]:a:[s:masterlist,a:[]]:false:false',
+		);
+	});
+
+	test('generates key for countByIndex with KeyRange', () => {
+		expect(
+			descriptionKey({
+				type: 'countByIndex',
+				store: 'syncQueue',
+				indexName: 'byEntity',
+				key: { lower: ['resume'], upper: ['resume', []], lowerOpen: false, upperOpen: true },
+			}),
+		).toBe('countByIndex:syncQueue:byEntity:kr:a:[s:resume]:a:[s:resume,a:[]]:false:true');
 	});
 });

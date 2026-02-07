@@ -3,16 +3,21 @@ import type {
 	BulkItem,
 	ClientMessage,
 	DatabaseSchema,
+	KeyRange,
 	OperationMessage,
 	WorkerMessage,
 } from '@sinking/worker/types';
 import type { DistributedOmit } from './types.ts';
 
+export type { KeyRange } from '@sinking/worker/types';
+
 export type QueryDescription =
 	| { type: 'get'; store: string; key: IDBValidKey }
 	| { type: 'getAll'; store: string }
-	| { type: 'getByIndex'; store: string; indexName: string; key: IDBValidKey }
-	| { type: 'getAllByIndex'; store: string; indexName: string; key: IDBValidKey };
+	| { type: 'getByIndex'; store: string; indexName: string; key: IDBValidKey | KeyRange }
+	| { type: 'getAllByIndex'; store: string; indexName: string; key: IDBValidKey | KeyRange }
+	| { type: 'count'; store: string }
+	| { type: 'countByIndex'; store: string; indexName: string; key: IDBValidKey | KeyRange };
 
 export interface LazyQuery<T> {
 	description: QueryDescription;
@@ -37,18 +42,23 @@ export interface SinkingOptions {
 	schema: DatabaseSchema;
 }
 
-export function hashKey(key: IDBValidKey): string {
+export function hashKey(key: IDBValidKey | KeyRange): string {
 	if (typeof key === 'string') return `s:${key}`;
 	if (typeof key === 'number') return `n:${key}`;
 	if (key instanceof Date) return `d:${key.getTime()}`;
 	if (Array.isArray(key)) return `a:[${key.map(k => hashKey(k as IDBValidKey)).join(',')}]`;
-	const buffer = key instanceof ArrayBuffer ? key : key.buffer;
-	const bytes = new Uint8Array(buffer);
-	let hash = 'b:';
-	for (const byte of bytes) {
-		hash += byte.toString(16).padStart(2, '0');
+	if (key instanceof ArrayBuffer || ArrayBuffer.isView(key)) {
+		const buffer = key instanceof ArrayBuffer ? key : key.buffer;
+		const bytes = new Uint8Array(buffer);
+		let hash = 'b:';
+		for (const byte of bytes) hash += byte.toString(16).padStart(2, '0');
+		return hash;
 	}
-	return hash;
+	let h = 'kr:';
+	if (key.lower !== undefined) h += hashKey(key.lower);
+	h += ':';
+	if (key.upper !== undefined) h += hashKey(key.upper);
+	return h + `:${key.lowerOpen ?? false}:${key.upperOpen ?? false}`;
 }
 
 export function descriptionKey(desc: QueryDescription): string {
@@ -61,6 +71,10 @@ export function descriptionKey(desc: QueryDescription): string {
 			return `getByIndex:${desc.store}:${desc.indexName}:${hashKey(desc.key)}`;
 		case 'getAllByIndex':
 			return `getAllByIndex:${desc.store}:${desc.indexName}:${hashKey(desc.key)}`;
+		case 'count':
+			return `count:${desc.store}`;
+		case 'countByIndex':
+			return `countByIndex:${desc.store}:${desc.indexName}:${hashKey(desc.key)}`;
 	}
 }
 
@@ -91,10 +105,7 @@ export function keysEqual(a: IDBValidKey, b: IDBValidKey): boolean {
 }
 
 function isAffected(desc: QueryDescription, store: string, key: IDBValidKey): boolean {
-	if (desc.store !== store) return false;
-	if (desc.type === 'getAll') return true;
-	if (desc.type === 'getByIndex' || desc.type === 'getAllByIndex') return true;
-	return keysEqual(desc.key, key);
+	return desc.store === store && (desc.type !== 'get' || keysEqual(desc.key, key));
 }
 
 export class Sinking {
@@ -132,12 +143,17 @@ export class Sinking {
 			if (message.type === 'ready') return;
 
 			if (message.type === 'change') {
-				this.invalidateBatch([{ store: message.store, key: message.key }]);
+				this.invalidate(d => isAffected(d, message.store, message.key));
 				return;
 			}
 
 			if (message.type === 'batch-change') {
-				this.invalidateBatch(message.changes);
+				this.invalidate(d => message.changes.some(c => isAffected(d, c.store, c.key)));
+				return;
+			}
+
+			if (message.type === 'store-change') {
+				this.invalidate(d => d.store === message.store);
 				return;
 			}
 
@@ -171,29 +187,13 @@ export class Sinking {
 		this.port.postMessage({ type: 'init', schema: options.schema } satisfies ClientMessage);
 	}
 
-	private async invalidateBatch(
-		changes: Array<{ store: string; key: IDBValidKey }>,
-	): Promise<void> {
-		const affectedSet = new Set<string>();
+	private async invalidate(predicate: (desc: QueryDescription) => boolean): Promise<void> {
 		const affected: QueryDescription[] = [];
-
-		for (const change of changes) {
-			for (const [, entry] of this.cache) {
-				if (isAffected(entry.description, change.store, change.key)) {
-					const key = descriptionKey(entry.description);
-					if (!affectedSet.has(key)) {
-						affectedSet.add(key);
-						affected.push(entry.description);
-					}
-				}
-			}
+		for (const entry of this.cache.values()) {
+			if (predicate(entry.description)) affected.push(entry.description);
 		}
-
 		await Promise.allSettled(affected.map(desc => this.refetch(desc)));
-
-		for (const desc of affected) {
-			this.notify(descriptionKey(desc));
-		}
+		for (const desc of affected) this.notify(descriptionKey(desc));
 	}
 
 	private async refetch(description: QueryDescription): Promise<void> {
@@ -273,12 +273,25 @@ export class Sinking {
 		return this.query({ type: 'getAll', store });
 	}
 
-	getByIndex<T>(store: string, indexName: string, key: IDBValidKey): LazyQuery<T | undefined> {
+	getByIndex<T>(
+		store: string,
+		indexName: string,
+		key: IDBValidKey | KeyRange,
+	): LazyQuery<T | undefined> {
 		return this.query({ type: 'getByIndex', store, indexName, key });
 	}
 
-	getAllByIndex<T>(store: string, indexName: string, key: IDBValidKey): LazyQuery<T[]> {
+	getAllByIndex<T>(store: string, indexName: string, key: IDBValidKey | KeyRange): LazyQuery<T[]> {
 		return this.query({ type: 'getAllByIndex', store, indexName, key });
+	}
+
+	count(store: string): LazyQuery<number>;
+	count(store: string, indexName: string, key: IDBValidKey | KeyRange): LazyQuery<number>;
+	count(store: string, indexName?: string, key?: IDBValidKey | KeyRange): LazyQuery<number> {
+		if (indexName !== undefined && key !== undefined) {
+			return this.query({ type: 'countByIndex', store, indexName, key });
+		}
+		return this.query({ type: 'count', store });
 	}
 
 	getCached<T>(description: QueryDescription): T | undefined {
@@ -304,6 +317,10 @@ export class Sinking {
 
 	async batch(operations: BatchOperation[]): Promise<void> {
 		await this.send({ type: 'batch', operations });
+	}
+
+	async clear(store: string): Promise<void> {
+		await this.send({ type: 'clear', store });
 	}
 
 	subscribe(description: QueryDescription, listener: SubscriptionListener): () => void {
