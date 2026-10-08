@@ -1,18 +1,32 @@
 import { openDB, request, transaction } from './idb.ts';
 import { emit, reply, replyError } from './messages.ts';
 import { applySchema } from './schema.ts';
-import type { BatchOperation, ClientMessage, KeyRange, OperationMessage, WorkerMessage } from './types.ts';
+import type {
+	BatchOperation,
+	ClientMessage,
+	KeyRange,
+	OperationMessage,
+	WorkerMessage,
+} from './types.ts';
 
 declare const self: SharedWorkerGlobalScope;
 
 const ports = new Set<MessagePort>();
 let db: IDBDatabase | null = null;
 
-function read<T>(db: IDBDatabase, store: string, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+function read<T>(
+	db: IDBDatabase,
+	store: string,
+	fn: (s: IDBObjectStore) => IDBRequest<T>,
+): Promise<T> {
 	return request(fn(db.transaction(store, 'readonly').objectStore(store)));
 }
 
-async function write(db: IDBDatabase, store: string, fn: (s: IDBObjectStore) => IDBRequest): Promise<void> {
+async function write(
+	db: IDBDatabase,
+	store: string,
+	fn: (s: IDBObjectStore) => IDBRequest,
+): Promise<void> {
 	const tx = db.transaction(store, 'readwrite');
 	await request(fn(tx.objectStore(store)));
 }
@@ -95,7 +109,12 @@ async function handleOperation(db: IDBDatabase, msg: OperationMessage): Promise<
 		case 'bulkPut':
 			return executeBatch(
 				db,
-				msg.items.map(i => ({ type: 'put' as const, store: msg.store, key: i.key, value: i.value })),
+				msg.items.map(i => ({
+					type: 'put' as const,
+					store: msg.store,
+					key: i.key,
+					value: i.value,
+				})),
 			);
 		case 'bulkDelete':
 			return executeBatch(

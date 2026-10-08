@@ -40,13 +40,31 @@ export type OperationMessage =
 	| { type: 'put'; id: string; store: string; key: IDBValidKey; value: unknown }
 	| { type: 'delete'; id: string; store: string; key: IDBValidKey }
 	| { type: 'getAll'; id: string; store: string }
-	| { type: 'getByIndex'; id: string; store: string; indexName: string; key: IDBValidKey | KeyRange }
-	| { type: 'getAllByIndex'; id: string; store: string; indexName: string; key: IDBValidKey | KeyRange }
+	| {
+			type: 'getByIndex';
+			id: string;
+			store: string;
+			indexName: string;
+			key: IDBValidKey | KeyRange;
+	  }
+	| {
+			type: 'getAllByIndex';
+			id: string;
+			store: string;
+			indexName: string;
+			key: IDBValidKey | KeyRange;
+	  }
 	| { type: 'bulkPut'; id: string; store: string; items: BulkItem[] }
 	| { type: 'bulkDelete'; id: string; store: string; keys: IDBValidKey[] }
 	| { type: 'batch'; id: string; operations: BatchOperation[] }
 	| { type: 'count'; id: string; store: string }
-	| { type: 'countByIndex'; id: string; store: string; indexName: string; key: IDBValidKey | KeyRange }
+	| {
+			type: 'countByIndex';
+			id: string;
+			store: string;
+			indexName: string;
+			key: IDBValidKey | KeyRange;
+	  }
 	| { type: 'clear'; id: string; store: string };
 
 export type ClientMessage = InitMessage | OperationMessage;
